@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 
-# Apply custom CSS for dark theme, making the dashboard wider and consistent styling
 st.markdown("""
     <style>
     body {
@@ -32,11 +31,11 @@ st.markdown("""
         color: #FF9800;
     }
     .block-container {
-        padding: 4rem;  /* Increased padding to make the dashboard wider */
+        padding: 4rem;  
         background-color: #1c1c1c;
         border-radius: 10px;
-        max-width: 1200px;  /* Max-width to control overall dashboard width */
-        margin: auto;  /* Center dashboard */
+        max-width: 1200px; 
+        margin: auto;  
         box-shadow: 0px 0px 15px 5px rgba(0,0,0,0.75);
     }
     .greeks-box {
