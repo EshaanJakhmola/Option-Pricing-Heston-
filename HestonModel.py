@@ -129,7 +129,7 @@ def plot_volatility_surface(S0, T, r, kappa, theta, sigma_v, rho, v0, figsize=(1
 st.title('Heston Model Interactive Dashboard')
 
 # Input parameters via sliders in the sidebar
-S0 = st.sidebar.slider("Initial Stock Price (Oil)", min_value=50.0, max_value=120.0, value=70.0)
+S0 = st.sidebar.slider("Initial Stock Price", min_value=50.0, max_value=120.0, value=70.0)
 K = st.sidebar.slider("Strike Price", min_value=60.0, max_value=100.0, value=75.0)
 T = st.sidebar.slider("Time to Maturity (years)", min_value=0.1, max_value=2.0, value=1.0)
 r = st.sidebar.slider("Risk-Free Rate", min_value=0.0, max_value=0.05, value=0.01)
