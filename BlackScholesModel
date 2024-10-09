@@ -1,0 +1,114 @@
+# Required libraries
+import streamlit as st
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import norm
+import pandas as pd
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+
+# Black-Scholes Option Pricing Functions
+def black_scholes(S, K, T, r, sigma, option_type='call'):
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    
+    if option_type == 'call':
+        price = S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+    elif option_type == 'put':
+        price = K * np.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
+    else:
+        raise ValueError("Invalid option type. Use 'call' or 'put'.")
+    
+    return price
+
+# Greeks
+def greeks(S, K, T, r, sigma, option_type='call'):
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    
+    delta = norm.cdf(d1) if option_type == 'call' else norm.cdf(d1) - 1
+    gamma = norm.pdf(d1) / (S * sigma * np.sqrt(T))
+    vega = S * norm.pdf(d1) * np.sqrt(T)
+    theta_call = (-S * norm.pdf(d1) * sigma) / (2 * np.sqrt(T)) - r * K * np.exp(-r * T) * norm.cdf(d2)
+    theta_put = (-S * norm.pdf(d1) * sigma) / (2 * np.sqrt(T)) + r * K * np.exp(-r * T) * norm.cdf(-d2)
+    theta = theta_call if option_type == 'call' else theta_put
+    rho_call = K * T * np.exp(-r * T) * norm.cdf(d2)
+    rho_put = -K * T * np.exp(-r * T) * norm.cdf(-d2)
+    rho = rho_call if option_type == 'call' else rho_put
+    
+    return {
+        'Delta': delta,
+        'Gamma': gamma,
+        'Vega': vega / 100,
+        'Theta': theta / 365,
+        'Rho': rho / 100
+    }
+
+# Volatility Surface
+def create_vol_surface(S, K_values, T_values, r, sigma):
+    prices = np.zeros((len(K_values), len(T_values)))
+
+    for i, K in enumerate(K_values):
+        for j, T in enumerate(T_values):
+            prices[i, j] = black_scholes(S, K, T, r, sigma)
+
+    return prices
+
+# Streamlit app interface
+st.title("Black-Scholes Option Pricing Model")
+st.sidebar.header("Input Parameters")
+
+# Sidebar inputs for the model
+S = st.sidebar.number_input("Stock Price (S)", value=100.0)
+K = st.sidebar.number_input("Strike Price (K)", value=100.0)
+T = st.sidebar.number_input("Time to Maturity (T in years)", value=1.0)
+r = st.sidebar.number_input("Risk-Free Rate (r)", value=0.05)
+sigma = st.sidebar.number_input("Volatility (σ)", value=0.2)
+option_type = st.sidebar.selectbox("Option Type", ("call", "put"))
+
+# Compute option price and Greeks
+option_price = black_scholes(S, K, T, r, sigma, option_type)
+greek_values = greeks(S, K, T, r, sigma, option_type)
+
+# Display the results
+st.subheader("Option Price")
+st.write(f"The Black-Scholes price for the {option_type} option is: {option_price:.2f}")
+
+st.subheader("Greeks")
+st.write(f"Delta: {greek_values['Delta']:.2f}")
+st.write(f"Gamma: {greek_values['Gamma']:.2f}")
+st.write(f"Vega: {greek_values['Vega']:.2f}")
+st.write(f"Theta (per day): {greek_values['Theta']:.2f}")
+st.write(f"Rho: {greek_values['Rho']:.2f}")
+
+# Volatility Surface
+st.subheader("Volatility Surface")
+
+K_values = np.linspace(80, 120, 10)
+T_values = np.linspace(0.1, 2.0, 10)
+vol_surface = create_vol_surface(S, K_values, T_values, r, sigma)
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+K_mesh, T_mesh = np.meshgrid(K_values, T_values)
+ax.plot_surface(K_mesh, T_mesh, vol_surface.T, cmap=cm.coolwarm, alpha=0.7)
+ax.set_xlabel('Strike Price')
+ax.set_ylabel('Time to Maturity')
+ax.set_zlabel('Option Price')
+ax.set_title('Volatility Surface')
+
+st.pyplot(fig)
+
+# Interactive Vega visualization
+st.subheader("Vega across different volatilities")
+volatility_range = np.linspace(0.1, 0.5, 100)
+vega_values = [greeks(S, K, T, r, vol)['Vega'] for vol in volatility_range]
+
+fig2, ax2 = plt.subplots()
+ax2.plot(volatility_range, vega_values)
+ax2.set_xlabel("Volatility (σ)")
+ax2.set_ylabel("Vega")
+ax2.set_title("Vega vs Volatility")
+st.pyplot(fig2)
+
+st.write("This dashboard provides insights into the Black-Scholes pricing model, Greeks, and volatility surface, making it useful for understanding option sensitivity.")
